@@ -1,0 +1,8 @@
+import React from "react";
+import "./header.css";
+
+export default function Header(){
+    return (
+    <div className="header">This is an header</div>
+    );
+}

@@ -1,6 +1,8 @@
 var path = require('path');
 const config = {
-  entry: './client/app.jsx',
+  entry: {
+    app: ['./client/app.jsx', './client/header/header.js']
+},
   output: {
     path: path.resolve(__dirname, './public/dist/'),
     filename: 'bundle.js'
@@ -14,7 +16,11 @@ const config = {
         options: {
           presets: ["@babel/env", "@babel/react"]
         }
-      }
+      },
+      {
+        test: /\.(css)$/,
+        use: ['style-loader','css-loader']
+     }
     ]
   }
 };
