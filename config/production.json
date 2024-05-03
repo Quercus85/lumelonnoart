@@ -1,5 +1,6 @@
 {
   "host": "EXTERNAL_HOSTNAME",
   "port": "PORT",
+  "postgres": "DATABASE_URL",
   "tlsEnabled": true
 }
