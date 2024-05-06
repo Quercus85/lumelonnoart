@@ -1,7 +1,7 @@
 var path = require('path');
 const config = {
   entry: {
-    app: ['./client/app.jsx', './client/header/header.js']
+    app: ['./client/app.jsx', './client/component/header/header.js']
 },
   output: {
     path: path.resolve(__dirname, './public/dist/'),
