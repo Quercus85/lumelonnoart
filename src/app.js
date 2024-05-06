@@ -21,6 +21,8 @@ const channels = require('./channels');
 const authentication = require('./authentication');
 const { connectAndSync, sequelize } = require('./sequelize');
 
+const errorFilePath = path.join(__dirname, './error-page.html');
+
 module.exports.createApp = function createApp() {
   const app = express(feathers());
 
@@ -56,9 +58,17 @@ module.exports.createApp = function createApp() {
   // Set up event channels (see channels.js)
   app.configure(channels);
 
-  // Configure a middleware for 404s and the error handler
-  app.use(express.notFound());
-  app.use(express.errorHandler({ logger }));
+  // Configure a middleware for the error handler
+  //app.use(express.notFound());
+  app.use(function (err, req, res, next) {
+    res.status(err.status || 500);
+    res.sendFile(errorFilePath);
+  });
+  //middleware for error 404
+  app.use(function (req, res, next) {
+    res.status(404);
+    res.sendFile(errorFilePath);
+  });
 
   app.hooks(appHooks);
   return app;
