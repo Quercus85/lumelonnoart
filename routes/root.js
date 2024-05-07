@@ -1,10 +1,13 @@
 import React from "react";
 import { Index } from "../client/component/index";
+import { Outlet } from "react-router-dom";
 
-export default function Root(){
+export default function Root() {
     return (
         <>
-           <Index/>
+            <div>
+                <Outlet />
+            </div>
         </>
     );
 }

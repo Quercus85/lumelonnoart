@@ -1,14 +1,14 @@
 import React from "react";
 import "./header.css";
+import { Outlet, Link } from "react-router-dom";
 
 export default function Header(){
-    //TODO togli il link riga 11
     return (
     <div className="header flex-center flex-row">
-        <span>Home</span>
-        <span>About me</span>
+        <span><Link to={`/`}>Home</Link></span>
+        <span><Link to={`about`}>About me</Link></span>
         <span>Gallery</span>
-        <span><a href="/pippolette">Comics</a></span> 
+        <span>Comics</span> 
     </div>
     );
 }

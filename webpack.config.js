@@ -6,6 +6,7 @@ const config = {
       './client/component/header/header.js',
       './client/component/index/index.js',
       './routes/root.js',
+      './routes/about.js',
     ]
   },
   output: {
