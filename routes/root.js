@@ -5,9 +5,7 @@ import Header from "../client/component/header/header";
 export default function Root() {
     return (
         <>
-            <div className="header">
-                <Header />
-            </div>
+            <Header />
             <div>
                 <Outlet />
             </div>

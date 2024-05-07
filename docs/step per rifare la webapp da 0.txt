@@ -1,0 +1,112 @@
+***installare webpack***
+yarn add webpack --dev
+yarn add webpack-cli --dev
+--------------------------------------------------------------------
+-installare babel***
+yarn add @babel/core --dev
+yarn add @babel/preset-env --dev
+yarn add @babel/preset-react --dev
+yarn add babel-loader --dev
+
+---------------------------------------------------------------------
+***installare react***
+yarn add react react-dom
+
+----------------------------------------------------------------------
+***creare un file webpack.config.js***
+
+var path = require('path');
+const config = {
+  entry: './client/app.jsx',
+  output: {
+    path: path.resolve(__dirname, './public/dist/'),
+    filename: 'bundle.js'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /(node_modules)/,
+        loader: 'babel-loader',
+        options: {
+          presets: ["@babel/env", "@babel/react"]
+        }
+      }
+    ]
+  }
+};
+module.exports = config;
+---------------------------------------------------------------------
+***creare un file .babelrc***
+
+{
+    "presets": ["@babel/env", "@babel/react"]
+}
+-----------------------------------------------------------------------
+***crea una cartella client nella root del progetto***
+-----------------------------------------------------------------------
+***nella cartella client, crea un file app.jsx***
+
+//app.jsx:
+import React from "react";
+import ReactDOM from "react-dom/client";
+
+function App(){
+    return <h3>Placeholder text</h3>
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+------------------------------------------------------------------------------------------
+***in public/index.html, metti questi script:***
+
+<div id="root" class="flex flex-column"></div>
+<script type="text/javascript" src="./dist/bundle.js"></script>
+------------------------------------------------------------------------------------
+***comando da aggiungere a package.json per il build del webpack:****
+"build": "node ./node_modules/webpack/bin/webpack.js -w"
+--------------------------------------------------------------------------------------
+***assicurati che nel package.json/devDependencies sono più o meno cosi:***
+ "@babel/core": "^7.1.6",
+ "@babel/preset-env": "^7.1.6",
+ "@babel/preset-react": "^7.0.0",
+ "babel-loader": "^8.0.4",
+ "react": "^18.3.1",
+ "react-dom": "^18.3.1",
+ "shx": "^0.3.3",
+ "webpack": "^5.91.0",
+ "webpack-cli": "^5.1.4"
+
+ -------------------------------------------------------------------------------------
+ ***installazione gestore dei css***
+
+ yarn add css-loader style-loader --dev
+
+ - modifica webpack config con questi:
+   module: {
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /(node_modules)/,
+        loader: 'babel-loader',
+        options: {
+          presets: ["@babel/env", "@babel/react"]
+        }
+      },
+      {
+        test: /\.(css)$/,
+        use: ['style-loader','css-loader']
+     }
+    ]
+  }
+
+  ---------------------------------------------------------------------------------------
+  ***IMPORTANTE: FAR RILEVARE NUOVI COMPONENT A WEBPACK:***
+
+  entry: {
+    app: ['./client/app.jsx', './client/header/header.js']
+  },
