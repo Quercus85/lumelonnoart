@@ -40,6 +40,11 @@ module.exports.createApp = function createApp() {
   // Host the public folder
   app.use('/', express.static(app.get('public')));
 
+  //redirect per il routing usando una libreria di routing client-side, come react-router
+  app.get('/*', function (req, res) {
+     res.sendFile(path.join(app.get('public'), 'index.html'));
+   });
+
   const tlsEnabled = app.get('tlsEnabled');
   if (typeof tlsEnabled !== 'boolean') throw new Error('Internal error: tlsEnabled not set');
   if (tlsEnabled) app.set('trust proxy', 1); // trust first proxy
