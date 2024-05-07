@@ -1,19 +1,31 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Header from "./component/header/header";
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
+import { Index } from "./component/index";
+import Root from "../routes/root";
+import About from "../routes/about";
 
-export default function App(){
-    return (
-    <div>
-        <Header/>
-        <h3>Placeholder text</h3>
-    </div>
-    );
-}
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Root />,
+    children: [
+      { index: true, element: <Index /> },
+      {
+        path: "about",
+        element: <About />,
+      },
+    ],
+  },
+
+])
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </React.StrictMode>
 );

@@ -11,7 +11,9 @@
 html {
   font-size: 100%;
   -ms-text-size-adjust: 100%;
-  -webkit-text-size-adjust: 100%; }
+  -webkit-text-size-adjust: 100%; 
+  ;
+} 
 
 html, button, input, select, textarea {
   font-family: sans-serif; }
@@ -20,7 +22,8 @@ article, aside, details, figcaption, figure, footer, header, hgroup, main, nav, 
   display: block; }
 
 body, form, fieldset, legend, input, select, textarea, button {
-  margin: 0; }
+  margin: 0; 
+ }
 
 audio, canvas, progress, video {
   display: inline-block;
@@ -45,7 +48,8 @@ body {
   font-size: 1rem;
   line-height: 22px;
   line-height: 1.375rem;
-  color: #585858;
+  /*TODO: cancella questo colore: solo per leggibilita*/
+ color: #ffd700;
   font-weight: 400;
   background: #02452f; 
 }
@@ -82,7 +86,8 @@ h2, .h2 {
   line-height: 2rem;
   margin-top: 1.4em;
   margin-bottom: .2em;
-  color: #343434;
+  /*TODO: cancella questo colore: solo per leggibilita*/
+ color: #ffd700;
   font-weight: 400; }
 
 h3, .h3 {
@@ -92,7 +97,8 @@ h3, .h3 {
   line-height: 1.75rem;
   margin-top: 1em;
   margin-bottom: .2em;
-  color: #343434;
+  /*TODO: cancella questo colore: solo per leggibilita*/
+ color: #ffd700;
   font-weight: 400; }
 
 h4, .h4 {
