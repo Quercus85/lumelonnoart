@@ -18,10 +18,6 @@ module.exports = function (app) {
             type: DataTypes.TEXT,
             allowNull: false
         },
-        inserted_at: {
-            type: DataTypes.DATEONLY,
-            allowNull: false
-        },
     }, {
         hooks: {
             beforeCount(options) {
