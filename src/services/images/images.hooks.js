@@ -5,7 +5,7 @@ const findAllImages = require('../../hooks/find-all-images');
 module.exports = {
   before: {
     all: [ authenticate('jwt') ],
-    find: [findAllImages()],
+    find: [],
     get: [],
     create: [],
     update: [],

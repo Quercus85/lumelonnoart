@@ -5,10 +5,11 @@ const DataTypes = Sequelize.DataTypes;
 
 module.exports = function (app) {
     const sequelizeClient = app.get('sequelizeClient');
-    const messages = sequelizeClient.define('images', {
+    const images = sequelizeClient.define('images', {
         id: {
             type: DataTypes.BIGINT,
             primaryKey: true,
+            autoIncrement: true,
         },
         image_name: {
             type: DataTypes.STRING,
@@ -41,5 +42,5 @@ module.exports = function (app) {
       });
     };
   */
-    return messages;
+    return images;
 };
