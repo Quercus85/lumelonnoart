@@ -1,6 +1,7 @@
 /* eslint-disable require-atomic-updates */
 module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
     return async context => {
+        console.log("START find-all-images hook");
         // Get `app`, `method`, `params` and `result` from the hook context
         const { app, method, result, params } = context;
         // Function that adds the user to a single message object
@@ -8,7 +9,7 @@ module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
             // Get the user based on their id, pass the `params` along so
             // that we get a safe version of the user data
             const imgQuery = await app.service('images').findAll();
-
+            console.log("Immagini trovate: " + JSON.stringify(imgQuery))
             // Merge the message content to include the `user` object
             return {
                 ...allImages,
@@ -24,7 +25,7 @@ module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
             // Otherwise just update the single result
             context.result = await findedImages(result);
         }
-        console.log("Images context: " + JSON.stringify(context));
+        console.log("STOP find-all-images hook");
         return context;
     };
 };
