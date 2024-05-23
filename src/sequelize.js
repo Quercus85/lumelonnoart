@@ -4,8 +4,8 @@ module.exports.sequelize = function sequelize(app) {
   const connectionString = app.get('databaseUrl');
   if (!connectionString) throw new Error('Database connection string is not set in config \'databaseUrl\'');
   const sequelize = new Sequelize(connectionString, {
-    //logging: console.log,
-    logging: false,
+    logging: console.log,
+    //logging: false,
     define: {
       freezeTableName: true
     }
@@ -46,5 +46,7 @@ module.exports.connectAndSync = async function connectAndSync(app) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   const opts = { force: true };
-  await sequelize.sync(opts);
+  //await sequelize.sync(opts);
+  await sequelize.sync();
+  console.log('All models were synchronized successfully.');
 };

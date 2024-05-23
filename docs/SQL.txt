@@ -1,0 +1,20 @@
+--tabella immagini
+CREATE TABLE images (
+    id SERIAL PRIMARY KEY,
+    image_name VARCHAR(255) NOT NULL,
+    image_url TEXT NOT NULL,
+    inserted_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
+--tabella tags
+CREATE TABLE tags (
+    id SERIAL PRIMARY KEY,
+    nome_tag VARCHAR(50) NOT NULL,
+);
+
+--immagini/tags m:n
+CREATE TABLE images_tags (
+    id SERIAL PRIMARY KEY,
+    id_image INT REFERENCES images(id),
+    id_tag INT REFERENCES tags(id),
+);
