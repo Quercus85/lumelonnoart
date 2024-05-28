@@ -9,7 +9,6 @@ module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
             // Get the user based on their id, pass the `params` along so
             // that we get a safe version of the user data
             const imgQuery = await app.service('images').findAll();
-            console.log("Immagini trovate: " + JSON.stringify(imgQuery))
             // Merge the message content to include the `user` object
             return {
                 ...allImages,

@@ -40,7 +40,7 @@ module.exports.createApp = function createApp() {
   // Host the public folder
   app.use('/', express.static(app.get('public')));
 
-  //redirect per il routing usando una libreria di routing client-side, come react-router
+  //redirect for client-side routing
   app.get('/*', function (req, res) {
      res.sendFile(path.join(app.get('public'), 'index.html'));
    });
