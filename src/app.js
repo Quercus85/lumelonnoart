@@ -44,6 +44,14 @@ module.exports.createApp = function createApp() {
       res.json(images);
     }      
   });
+
+  app.get('/api/tags', async function(req,res){
+    const tags = await app.service('tags').find();
+    if (tags){
+      logger.info("/api/tags/find found " + tags.total + " tags")
+      res.json(tags);
+    }
+  });
   /***************/
 
   app.use(favicon(path.join(app.get('public'), 'favicon.ico')));
