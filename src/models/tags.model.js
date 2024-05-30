@@ -1,22 +1,18 @@
-// See http://docs.sequelizejs.com/en/latest/docs/models-definition/
+// See https://sequelize.org/master/manual/model-basics.html
 // for more of what you can do here.
 const Sequelize = require('sequelize');
 const DataTypes = Sequelize.DataTypes;
 
 module.exports = function (app) {
   const sequelizeClient = app.get('sequelizeClient');
-  const images = sequelizeClient.define('images', {
+  const tags = sequelizeClient.define('tags', {
     id: {
       type: DataTypes.BIGINT,
       primaryKey: true,
       autoIncrement: true,
     },
-    image_name: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-    image_url: {
-      type: DataTypes.TEXT,
+    description: {
+      type: DataTypes.STRING(20),
       allowNull: false
     },
   }, {
@@ -28,9 +24,11 @@ module.exports = function (app) {
   });
 
   // eslint-disable-next-line no-unused-vars
-  images.associate = function (models) {
-    images.belongsToMany(models.tags, {through: 'imagesTags'});
+  tags.associate = function (models) {
+    // Define associations here
+    // See https://sequelize.org/master/manual/assocs.html
+    tags.belongsToMany(models.images, {through: 'imagesTags'});
   };
 
-  return images;
+  return tags;
 };

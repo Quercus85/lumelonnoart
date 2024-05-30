@@ -1,3 +1,5 @@
+const { Tags } = require("../services/tags/tags.class");
+
 /* eslint-disable require-atomic-updates */
 module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
     return async context => {
@@ -8,8 +10,7 @@ module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
         const findedImages = async (allImages) => {
             // Get the user based on their id, pass the `params` along so
             // that we get a safe version of the user data
-            const imgQuery = await app.service('images').findAll();
-            console.log("Immagini trovate: " + JSON.stringify(imgQuery))
+            const imgQuery = await app.service('images').findAll({include: Tags});
             // Merge the message content to include the `user` object
             return {
                 ...allImages,
