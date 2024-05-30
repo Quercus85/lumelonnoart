@@ -11,7 +11,6 @@ const configuration = require('@feathersjs/configuration');
 const express = require('@feathersjs/express');
 const socketio = require('@feathersjs/socketio');
 
-
 const middleware = require('./middleware');
 const services = require('./services');
 const session = require('./session');
@@ -36,11 +35,22 @@ module.exports.createApp = function createApp() {
   app.use(compress());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  //api endpoint services, mostly for easier CRUD operations. NOT FOR PRODUCTION !
+  app.get('/api/images', async function(req,res){
+    const images = await app.service('images').find();
+    if (images){
+      logger.info("/api/images/find found " + images.total + " images")
+      res.json(images);
+    }      
+  });
+  /***************/
+
   app.use(favicon(path.join(app.get('public'), 'favicon.ico')));
   // Host the public folder
   app.use('/', express.static(app.get('public')));
 
-  //redirect per il routing usando una libreria di routing client-side, come react-router
+  //redirect for client-side routing
   app.get('/*', function (req, res) {
      res.sendFile(path.join(app.get('public'), 'index.html'));
    });
