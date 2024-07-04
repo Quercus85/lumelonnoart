@@ -37,21 +37,99 @@ module.exports.createApp = function createApp() {
   app.use(express.urlencoded({ extended: true }));
 
   //api endpoint services, mostly for easier CRUD operations. NOT FOR PRODUCTION !
-  app.get('/api/images', async function(req,res){
-    const images = await app.service('images').find();
-    if (images){
-      logger.info("/api/images/find found " + images.total + " images")
+  app.get('/api/images', async (req, res) => {
+    try {
+      const images = await app.service('images').find();
       res.json(images);
-    }      
-  });
-
-  app.get('/api/tags', async function(req,res){
-    const tags = await app.service('tags').find();
-    if (tags){
-      logger.info("/api/tags/find found " + tags.total + " tags")
-      res.json(tags);
+    } catch (error) {
+      res.status(500).json({ error: 'Errore nel recupero delle immagini.: ' + error });
     }
   });
+
+  app.get('/api/tags', async (req, res) => {
+    try {
+      const tags = await app.service('tags').find();
+      res.json(tags);
+    } catch (error) {
+      res.status(500).json({ error: 'Errore nel recupero delle tags.: ' + error });
+    }
+  });
+
+
+  app.post('/api/imgupload', async (req, res) => {
+    try {
+      // Trova il record del tag con ID 1
+      const tagRecord = await app.service('tags').find({
+        query: {
+          id: 1
+        }
+      });
+      console.log("tag trovato: " + JSON.stringify(tagRecord))
+      // Crea un nuovo record nella tabella 'images' e associalo al tag trovato
+      const insertImg = await app.service('images').create({
+        image_name: 'pippolomeo',
+        image_url: 'http://iopippo',
+        images_tags: [{
+          tags_id: tagRecord.id,
+          tagId: tagRecord.id,
+        }]
+      }, {
+        include: {
+          model: app.service('imagesTags').Model,
+          as: 'imagesTags'
+        }
+      });
+
+      console.log("oggetto restituito: " + JSON.stringify(insertImg))
+
+      const dataI = await app.service('imagesTags').create({
+        tagId: tagRecord.data[0].id,
+        imageId: insertImg.id,
+        tags_Id: tagRecord.data[0].id,
+        images_Id: insertImg.id,
+      });
+      console.log("oggetto restituito dalla insert: " + JSON.stringify(dataI))
+
+      const dataP = await app.service('imagesTags').find();
+      console.log("dataP: " + JSON.stringify(dataP))
+      console.log("Cerco di prendere l' immagine con le tag associate");
+      const imgTaggate = await app.service('images').find({
+        include: [{
+          model: app.service('tags').Model, as: 'tags'
+        }],
+        query: {
+          $limit: 25
+        }
+      });
+      console.log("immagini trovate: " + JSON.stringify(imgTaggate))
+      // Invia una risposta di successo
+      res.status(200).json({ message: 'Immagine inserita con successo!', data: imgTaggate });
+    } catch (error) {
+      console.error("Errore:", error);
+      res.status(500).json({ error: 'Errore durante l\'elaborazione della richiesta.' });
+    }
+  });
+
+  app.post('/api/addtag', async (req, res) => {
+    try {
+      const tagToAdd = req.body.description;
+      console.log("tag in ingresso: " + tagToAdd)
+      if (tagToAdd !== undefined) {
+        const addTag = await app.service('tags').create({
+          description: tagToAdd
+        });
+        res.status(200).json({ message: 'Tag inserita con successo!', data: addTag });
+      }
+      else
+        res.status(500).json({ error: 'La descrizione del tag non può essere vuota' });
+    }
+    catch (error) {
+      console.error("Errore:", error);
+      res.status(500).json({ error: 'Errore durante l\'elaborazione della richiesta.' });
+    }
+  })
+
+
   /***************/
 
   app.use(favicon(path.join(app.get('public'), 'favicon.ico')));
@@ -60,8 +138,8 @@ module.exports.createApp = function createApp() {
 
   //redirect for client-side routing
   app.get('/*', function (req, res) {
-     res.sendFile(path.join(app.get('public'), 'index.html'));
-   });
+    res.sendFile(path.join(app.get('public'), 'index.html'));
+  });
 
   const tlsEnabled = app.get('tlsEnabled');
   if (typeof tlsEnabled !== 'boolean') throw new Error('Internal error: tlsEnabled not set');
@@ -94,6 +172,10 @@ module.exports.createApp = function createApp() {
   });
 
   app.hooks(appHooks);
+  /* //per verificare i servizi attivi
+  const serviziAttivi = Object.keys(app.services);
+  console.log('Servizi attivi:', serviziAttivi);
+  */
   return app;
 };
 

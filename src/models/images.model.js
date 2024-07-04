@@ -29,7 +29,8 @@ module.exports = function (app) {
 
   // eslint-disable-next-line no-unused-vars
   images.associate = function (models) {
-    images.belongsToMany(models.tags, {through: 'imagesTags'});
+    images.belongsToMany(models.tags, {through: models.images_tags});
+   // images.hasMany(models.ImagesTags, { as: 'imagesTags', foreignKey: 'images_id'} );
   };
 
   return images;

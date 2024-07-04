@@ -2,20 +2,26 @@
 // for more of what you can do here.
 const Sequelize = require('sequelize');
 const DataTypes = Sequelize.DataTypes;
-//const { ImagesTags } = require('./images-tags.model');
 
 module.exports = function (app) {
   const sequelizeClient = app.get('sequelizeClient');
-  const tags = sequelizeClient.define('tags', {
-    id: {
+  const imagesTags = sequelizeClient.define('images_tags', {
+    
+    images_id:{
       type: DataTypes.BIGINT,
-      primaryKey: true,
-      autoIncrement: true,
+      references :{
+        model: 'images',
+        key: 'id'
+      }
     },
-    description: {
-      type: DataTypes.STRING(20),
-      allowNull: false
-    },
+    tags_id:{
+      type: DataTypes.BIGINT,
+      references :{
+        model: 'tags',
+        key: 'id'
+      }
+    }
+      
   }, {
     hooks: {
       beforeCount(options) {
@@ -25,12 +31,10 @@ module.exports = function (app) {
   });
 
   // eslint-disable-next-line no-unused-vars
-  tags.associate = function (models) {
+  imagesTags.associate = function (models) {
     // Define associations here
     // See https://sequelize.org/master/manual/assocs.html
-    tags.belongsToMany(models.images, {through: models.images_tags});
-    //tags.hasMany(models.ImagesTags, { as: 'imagesTags', foreignKey: 'tags_id'} );
   };
 
-  return tags;
+  return imagesTags;
 };

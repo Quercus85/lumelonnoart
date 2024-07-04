@@ -1,5 +1,6 @@
 const { Images } = require("../services/images/images.class");
 
+
 /* eslint-disable require-atomic-updates */
 module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
     return async context => {
@@ -10,7 +11,19 @@ module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
         const findedTags = async (allTags) => {
             // Get the user based on their id, pass the `params` along so
             // that we get a safe version of the user data
-            const tagsQuery = await app.service('tags').findAll({include:Images});
+            const tagIds = params.query.id; // Assumi che i tagIds siano passati come parametro
+            console.log("TAGSID:" + JSON.stringify(tagIds) + ", type " + typeof(tagIds) )
+            const tagsQuery = null;
+            if(tagIds > 0 ){
+                tagsQuery = await app.service('tags').find({
+                query: {
+                 // id: { $in: tagIds } // Filtra per gli ID specificati
+                 id:  tagIds  // Filtra per gli ID specificati
+                }
+              }); 
+            }
+            else if(tagIds == undefined || tagIds == null)
+                tagsQuery = await app.service('tags').findAll();
             // Merge the message content to include the `user` object
             return {
                 ...allTags,
