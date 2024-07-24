@@ -1,5 +1,4 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
-
 const findAllImages = require('../../hooks/find-all-images');
 
 module.exports = {
@@ -15,7 +14,8 @@ module.exports = {
 
   after: {
     all: [],
-    find: [findAllImages()],
+    //find: [findAllImages()],
+    find: [],
     get: [],
     create: [],
     update: [],

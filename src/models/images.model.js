@@ -29,7 +29,11 @@ module.exports = function (app) {
 
   // eslint-disable-next-line no-unused-vars
   images.associate = function (models) {
-    images.belongsToMany(models.tags, {through: 'imagesTags'});
+    images.belongsToMany(models.tags, {
+      foreignKey: 'imageId',
+      through: 'imagestags',
+      as: 'tags'}
+    );
   };
 
   return images;
