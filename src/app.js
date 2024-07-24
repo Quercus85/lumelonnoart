@@ -58,49 +58,46 @@ module.exports.createApp = function createApp() {
 
   app.post('/api/imgupload', async (req, res) => {
     try {
+      //TODO: trova il tag usando l' id in ingresso. Aggiungi più di un tag
       // Trova il record del tag con ID 1
       const tagRecord = await app.service('tags').find({
         query: {
           id: 1
         }
       });
-      console.log("tag trovato: " + JSON.stringify(tagRecord))
+      console.log("tag trovati: " + JSON.stringify(tagRecord))
       // Crea un nuovo record nella tabella 'images' e associalo al tag trovato
       const insertImg = await app.service('images').create({
         image_name: 'pippolomeo',
-        image_url: 'http://iopippo',
-        images_tags: [{
-          tags_id: tagRecord.id,
-          tagId: tagRecord.id,
-        }]
-      }, {
-        include: {
-          model: app.service('imagesTags').Model,
-          as: 'imagesTags'
-        }
+        image_url: 'http://iopippo'
       });
-
-      console.log("oggetto restituito: " + JSON.stringify(insertImg))
-
-      const dataI = await app.service('imagesTags').create({
-        tagId: tagRecord.data[0].id,
+      console.log("oggetto immagine restituito: " + JSON.stringify(insertImg))
+      console.log("id del tag: " + tagRecord.data[0].id)
+      //inserimento del tag ? 
+      const pippores = await app.get('sequelizeClient').models.imagestags.create({
         imageId: insertImg.id,
-        tags_Id: tagRecord.data[0].id,
-        images_Id: insertImg.id,
+        tagId: tagRecord.data[0].id
       });
-      console.log("oggetto restituito dalla insert: " + JSON.stringify(dataI))
 
-      const dataP = await app.service('imagesTags').find();
-      console.log("dataP: " + JSON.stringify(dataP))
       console.log("Cerco di prendere l' immagine con le tag associate");
       const imgTaggate = await app.service('images').find({
-        include: [{
-          model: app.service('tags').Model, as: 'tags'
-        }],
         query: {
-          $limit: 25
+          $limit:25
+        },
+        sequelize: {
+          include: [{
+            model: app.get('sequelizeClient').models.tags,
+            as: 'tags',
+            through: {
+              model: app.get('sequelizeClient').models.imagestags,
+              attributes: []
+            }
+          }]
         }
       });
+      
+      
+
       console.log("immagini trovate: " + JSON.stringify(imgTaggate))
       // Invia una risposta di successo
       res.status(200).json({ message: 'Immagine inserita con successo!', data: imgTaggate });

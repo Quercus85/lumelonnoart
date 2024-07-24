@@ -28,8 +28,12 @@ module.exports = function (app) {
   tags.associate = function (models) {
     // Define associations here
     // See https://sequelize.org/master/manual/assocs.html
-    tags.belongsToMany(models.images, {through: models.images_tags});
-    //tags.hasMany(models.ImagesTags, { as: 'imagesTags', foreignKey: 'tags_id'} );
+    tags.belongsToMany(models.images, 
+      {
+      foreignKey: 'tagId',
+      through: 'imagestags',
+      as: 'images'
+      });
   };
 
   return tags;
