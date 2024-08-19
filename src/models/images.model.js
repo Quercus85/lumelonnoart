@@ -19,6 +19,10 @@ module.exports = function (app) {
       type: DataTypes.TEXT,
       allowNull: false
     },
+    image_thumb: {
+      type: DataTypes.TEXT,
+      allowNull: false
+    },
   }, {
     hooks: {
       beforeCount(options) {

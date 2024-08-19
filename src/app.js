@@ -22,6 +22,64 @@ const { connectAndSync, sequelize } = require('./sequelize');
 
 const errorFilePath = path.join(__dirname, './error-page.html');
 
+function tagsOfImagesJsonFormatter(imgTaggate) {
+  console.log("tagsOfImagesJsonFormatter START");
+  const tagsById = {};
+
+  // Itera attraverso i dati e raggruppa i tag per ID
+  if (imgTaggate != undefined) {
+    imgTaggate.data.forEach(image => {
+      const { id, 'tags.id': tagsId, 'tags.description': tagsDescription } = image;
+      if (!tagsById[id]) {
+        tagsById[id] = [];
+      }
+      tagsById[id].push(tagsId);
+      tagsById[id].push(tagsDescription);
+    });
+
+    // Crea un nuovo array con i tag raggruppati
+    const aggregatedTags = Object.keys(tagsById).map(id => ({
+      id,
+      tags: tagsById[id]
+    }));
+
+    console.log("aggregatedTags: " + JSON.stringify(aggregatedTags));
+
+    //modifica del json in uscita
+    for (var i = 0; i < imgTaggate.data.length; i++) {
+      if (imgTaggate.data[i - 1] != undefined && imgTaggate.data[i - 1].id === imgTaggate.data[i].id) {
+        //console.log("imgTaggate ha l' array tags. Skip");
+        continue;
+      }
+      else {
+        /*cicla l' oggetto. Cerca in aggregatedTags l' id corrispondente e gli aggiunge l' arrai con le sue tag. 
+        Possibilmente, elimina i campi non necessari da esporre
+        */
+        let tagsArray;
+        for (var t = 0; t < aggregatedTags.length; t++) {
+          if (aggregatedTags[t].id === imgTaggate.data[i].id) {
+            tagsArray = aggregatedTags[t].tags;
+            break;
+          } //else console.log("skip")
+        }
+        //
+        //aggiungo l' array delle tag al json in uscita. Elimino le voci non necessarie
+        console.log("aggiungo l' array delle tag al json in uscita");
+        imgTaggate.data[i].tags = tagsArray;
+        console.log("Elimino le voci non necessarie")
+        delete imgTaggate.data[i]['tags.id'];
+        delete imgTaggate.data[i]['tags.description'];
+        delete imgTaggate.data[i]['tags.createdAt'];
+        delete imgTaggate.data[i]['tags.updatedAt'];
+      }
+    }
+    //filtro i dati con immagine id duplicata che non hanno l' array delle tag
+    console.log("tagsOfImagesJsonFormatter END");
+    return imgTaggate.data = imgTaggate.data.filter(item => item.hasOwnProperty('tags'));
+  }
+  else return imgTaggate;
+}
+
 module.exports.createApp = function createApp() {
   const app = express(feathers());
 
@@ -39,50 +97,9 @@ module.exports.createApp = function createApp() {
   //api endpoint services, mostly for easier CRUD operations. NOT FOR PRODUCTION !
   app.get('/api/images', async (req, res) => {
     try {
-      const images = await app.service('images').find();
-      res.json(images);
-    } catch (error) {
-      res.status(500).json({ error: 'Errore nel recupero delle immagini.: ' + error });
-    }
-  });
-
-  app.get('/api/tags', async (req, res) => {
-    try {
-      const tags = await app.service('tags').find();
-      res.json(tags);
-    } catch (error) {
-      res.status(500).json({ error: 'Errore nel recupero delle tags.: ' + error });
-    }
-  });
-
-
-  app.post('/api/imgupload', async (req, res) => {
-    try {
-      //TODO: trova il tag usando l' id in ingresso. Aggiungi più di un tag
-      // Trova il record del tag con ID 1
-      const tagRecord = await app.service('tags').find({
-        query: {
-          id: 1
-        }
-      });
-      console.log("tag trovati: " + JSON.stringify(tagRecord))
-      // Crea un nuovo record nella tabella 'images' e associalo al tag trovato
-      const insertImg = await app.service('images').create({
-        image_name: 'pippolomeo',
-        image_url: 'http://iopippo'
-      });
-      console.log("oggetto immagine restituito: " + JSON.stringify(insertImg))
-      console.log("id del tag: " + tagRecord.data[0].id)
-      //inserimento del tag ? 
-      const pippores = await app.get('sequelizeClient').models.imagestags.create({
-        imageId: insertImg.id,
-        tagId: tagRecord.data[0].id
-      });
-
-      console.log("Cerco di prendere l' immagine con le tag associate");
       const imgTaggate = await app.service('images').find({
         query: {
-          $limit:25
+          $limit: 25
         },
         sequelize: {
           include: [{
@@ -92,37 +109,106 @@ module.exports.createApp = function createApp() {
               model: app.get('sequelizeClient').models.imagestags,
               attributes: []
             }
+
           }]
         }
       });
-      
-      
+      const jsonOutput = tagsOfImagesJsonFormatter(imgTaggate);
+      res.status(200).json(jsonOutput);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
+    }
+  });
 
-      console.log("immagini trovate: " + JSON.stringify(imgTaggate))
+  app.get('/api/tags', async (req, res) => {
+    try {
+      const tags = await app.service('tags').find();
+      res.json(tags);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
+    }
+  });
+
+
+  app.post('/api/imgupload', async (req, res) => {
+    try {
+      // Trova il record del tag con ID 1
+      console.log("json in ingresso: " + JSON.stringify(req.body));
+      const imgToUpload = req.body.images;
+      console.log("imgToUpload: " + JSON.stringify(imgToUpload));
+
+      for (image in imgToUpload) {
+        //recupera gli oggetti 'tags'. In teoria ho già gli id, ma assicura di non inserire associazioni con tag id inesistenti,
+        let tagList = [];
+        const tagsToFind = imgToUpload[image].tags;
+        for (tag in tagsToFind) {
+          const tagObject = await app.service('tags').find({
+            query: {
+              id: tagsToFind[tag].id
+            }
+          });
+          tagList.push(tagObject);
+        }
+        console.log("tag trovati: " + JSON.stringify(tagList));
+        // Crea un nuovo record nella tabella 'images'
+        const insertImg = await app.service('images').create({
+          image_name: imgToUpload[image].image_name,
+          image_url: imgToUpload[image].image_url,
+          image_thumb: imgToUpload[image].image_thumb
+        });
+        //console.log("oggetto immagine restituito: " + JSON.stringify(insertImg))
+        //associa l' immagine ai tags in relazione m:n
+
+        for (tag in tagList) {
+          const tagsId = tagList[tag].data[0].id;
+          //const tagsId = tagList[tag].data[0];
+          //await insertImg.addTags(tagsId);
+          console.log("Inserimento associazione: imageId " + insertImg.id + " // tagId: " + tagsId);
+          const pippores = await app.get('sequelizeClient').models.imagestags.create({
+            imageId: insertImg.id,
+            tagId: tagsId
+          });
+        }
+      }
       // Invia una risposta di successo
-      res.status(200).json({ message: 'Immagine inserita con successo!', data: imgTaggate });
+      res.status(200).json({ message: 'Immagini inserite con successo!' });
     } catch (error) {
       console.error("Errore:", error);
-      res.status(500).json({ error: 'Errore durante l\'elaborazione della richiesta.' });
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
     }
   });
 
   app.post('/api/addtag', async (req, res) => {
     try {
-      const tagToAdd = req.body.description;
-      console.log("tag in ingresso: " + tagToAdd)
+      const tagToAdd = req.body.tags;
+      console.log("tag in ingresso: " + JSON.stringify(tagToAdd))
       if (tagToAdd !== undefined) {
-        const addTag = await app.service('tags').create({
-          description: tagToAdd
-        });
-        res.status(200).json({ message: 'Tag inserita con successo!', data: addTag });
+        for (i in tagToAdd) {
+          console.log("Inserimento del tag: " + tagToAdd[i].description);
+          const addTag = await app.service('tags').create({
+            description: tagToAdd[i].description
+          });
+        }
+        res.status(200).json({ message: 'Tag inserite con successo!' });
       }
       else
         res.status(500).json({ error: 'La descrizione del tag non può essere vuota' });
     }
     catch (error) {
       console.error("Errore:", error);
-      res.status(500).json({ error: 'Errore durante l\'elaborazione della richiesta.' });
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
     }
   })
 
