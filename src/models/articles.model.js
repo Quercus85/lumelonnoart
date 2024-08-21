@@ -2,46 +2,45 @@
 // for more of what you can do here.
 const Sequelize = require('sequelize');
 const DataTypes = Sequelize.DataTypes;
-//const { ImagesTags } = require('./images-tags.model');
 
 module.exports = function (app) {
   const sequelizeClient = app.get('sequelizeClient');
-  const tags = sequelizeClient.define('tags', {
+  const articles = sequelizeClient.define('articles', {
     id: {
       type: DataTypes.BIGINT,
       primaryKey: true,
       autoIncrement: true,
     },
-    description: {
-      type: DataTypes.STRING(20),
+    title: {
+      type: DataTypes.STRING,
       allowNull: false
     },
+    subtitle: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    art_body: {
+      type: DataTypes.TEXT,
+      allowNull: false
+    }
   }, {
     hooks: {
       beforeCount(options) {
         options.raw = true;
       }
-    },
+    }
   });
 
   // eslint-disable-next-line no-unused-vars
-  tags.associate = function (models) {
+  articles.associate = function (models) {
     // Define associations here
     // See https://sequelize.org/master/manual/assocs.html
-    tags.belongsToMany(models.images, 
-      {
-      foreignKey: 'tagId',
-      through: 'imagestags',
-      as: 'images'
-      });
-
-      tags.belongsToMany(models.articles, 
-        {
-        foreignKey: 'tagId',
-        through: 'articlestags',
-        as: 'articles'
-        });
+    articles.belongsToMany(models.tags, {
+      foreignKey: 'articleId',
+      through: 'articlestags',
+      as: 'tags'}
+    );
   };
 
-  return tags;
+  return articles;
 };

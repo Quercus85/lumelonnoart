@@ -1,5 +1,7 @@
-export function format(imgTaggate) {
+export function tagsFormatter(imgTaggate) {
   //console.log("tagsOfImagesJsonFormatter START");
+  // IMPORTANTE ! SE MODIFICHI QUESTO FILE, INCOLLA IL CODICE ANCHE NEL FILE GEMELLO. DEVONO ESSERE UGUALI, TRANNE I CONSOLE.LOG E L'EXPORT !
+
   const tagsById = {};
 
   // Itera attraverso i dati e raggruppa i tag per ID
@@ -9,7 +11,8 @@ export function format(imgTaggate) {
       if (!tagsById[id]) {
         tagsById[id] = [];
       }
-      tagsById[id].push(tagsId);
+      //decommentalo se un giorno ti serviranno gli id del tag. NB: TOGLI L'ATTRIBUTE DA IMAGES.HOOKS IN QUEL CASO, O NON TI ARRIVANO !
+      //tagsById[id].push(tagsId);
       tagsById[id].push(tagsDescription);
     });
 
@@ -29,7 +32,7 @@ export function format(imgTaggate) {
       }
       else {
         /*cicla l' oggetto. Cerca in aggregatedTags l' id corrispondente e gli aggiunge l' arrai con le sue tag. 
-        Possibilmente, elimina i campi non necessari da esporre
+        Poi, elimina i campi non necessari da esporre
         */
         let tagsArray;
         for (var t = 0; t < aggregatedTags.length; t++) {

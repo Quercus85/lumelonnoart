@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
-import { format } from "../src/utils/tags-of_images-json-formatter";
+import { tagsFormatter } from "../src/utils/tags-json-formatter";
 
 // Establish a Socket.io connection
 const socket = io();
@@ -11,7 +11,7 @@ client.configure(feathers.socketio(socket));
 
 async function getImages() {
     const images = await client.service("images").find();
-    const jsonResponse = format(images);
+    const jsonResponse = tagsFormatter(images);
     return jsonResponse;
 }
 
@@ -28,21 +28,12 @@ export default function About() {
         fetchData();
     }, []); // Aggiungi eventuali dipendenze qui
 
-    console.log(response);
     if (response) {
-        console.log(response[0].image_url);
+        //TODO: se il problema non si è risolto, capire perchè il json ha tag undefined
+        //TODO RIGENERA IL WEBPACK !!!
+        console.log("superpippo: " + JSON.stringify(response));
+        //console.log(response[0].image_url);
     }
-
-    /*
-    TODO: il json delle tag contiene gli id invece delle sole descrizione. Fixalo
-    tags: Array(6) [ "1", "2020", "3", … ]
-        0: "1"
-        1: "2020"
-        2: "3"
-        3: "Sketch"
-        4: "4"
-        5: "Comic"
-    */
     return (
         <>
             <h3>This is the About Me page</h3>

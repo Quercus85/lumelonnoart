@@ -16,6 +16,7 @@ const includeHook = async context => {
     include: [{
       model: tags,
       as: 'tags',
+      attributes:['description'],
       through: {
         model: imagestags,
         attributes: []
