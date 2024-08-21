@@ -1,6 +1,6 @@
 //const { authenticate } = require('@feathersjs/authentication').hooks;
 
-const includeHook = async context => {
+const includeTagsHook = async context => {
   const app = context.app; // Accedi all'oggetto app dal contesto
   const sequelizeClient = app.get('sequelizeClient');
   const { tags, imagestags } = sequelizeClient.models;
@@ -21,7 +21,9 @@ const includeHook = async context => {
         model: imagestags,
         attributes: []
       }
-    }]
+    }],
+    limit: 25, // Imposta il limite di risultati a 25
+    offset: context.params.query.$skip || 0
   };
 
   return context;
@@ -30,7 +32,8 @@ const includeHook = async context => {
 module.exports = {
   before: {
     all: [],
-    find: [includeHook],
+    find: [includeTagsHook
+    ],
     get: [],
     create: [],
     update: [],

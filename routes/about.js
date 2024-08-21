@@ -10,7 +10,9 @@ const client = feathers();
 client.configure(feathers.socketio(socket));
 
 async function getImages() {
-    const images = await client.service("images").find();
+    const images = await client.service("images").find({
+        $skip: 0
+    });
     const jsonResponse = tagsFormatter(images);
     return jsonResponse;
 }
@@ -28,12 +30,6 @@ export default function About() {
         fetchData();
     }, []); // Aggiungi eventuali dipendenze qui
 
-    if (response) {
-        //TODO: se il problema non si è risolto, capire perchè il json ha tag undefined
-        //TODO RIGENERA IL WEBPACK !!!
-        console.log("superpippo: " + JSON.stringify(response));
-        //console.log(response[0].image_url);
-    }
     return (
         <>
             <h3>This is the About Me page</h3>

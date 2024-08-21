@@ -42,18 +42,7 @@ module.exports.createApp = function createApp() {
     try {
       const imgTaggate = await app.service('images').find({
         query: {
-          $limit: 25
-        },
-        sequelize: {
-          include: [{
-            model: app.get('sequelizeClient').models.tags,
-            as: 'tags',
-            through: {
-              model: app.get('sequelizeClient').models.imagestags,
-              attributes: []
-            }
-
-          }]
+          $skip: 0
         }
       });
       const jsonOutput = tagsFormatter(imgTaggate);
@@ -70,6 +59,23 @@ module.exports.createApp = function createApp() {
     try {
       const tags = await app.service('tags').find();
       res.json(tags);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
+    }
+  });
+
+  app.get('/api/articles', async (req, res) => {
+    try {
+      const articles = await app.service('articles').find({
+        query: {
+          $skip: 0
+        }
+      });
+      const jsonOutput = tagsFormatter(articles);
+      res.status(200).json(jsonOutput);
     } catch (error) {
       res.status(500).json({
         error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
@@ -113,7 +119,7 @@ module.exports.createApp = function createApp() {
           //const tagsId = tagList[tag].data[0];
           //await insertImg.addTags(tagsId);
           console.log("Inserimento associazione: imageId " + insertImg.id + " // tagId: " + tagsId);
-          const pippores = await app.get('sequelizeClient').models.imagestags.create({
+          const createAssociation = await app.get('sequelizeClient').models.imagestags.create({
             imageId: insertImg.id,
             tagId: tagsId
           });
@@ -153,7 +159,60 @@ module.exports.createApp = function createApp() {
           " / message: " + error.message
       });
     }
-  })
+  });
+
+  app.post('/api/articleupload', async (req, res) => {
+    try {
+      // Trova il record del tag con ID 1
+      console.log("json in ingresso: " + JSON.stringify(req.body));
+      const articleToUpload = req.body.articles;
+      console.log("articleToUpload: " + JSON.stringify(articleToUpload));
+
+      for (article in articleToUpload) {
+        //recupera gli oggetti 'tags'. In teoria ho già gli id, ma assicura di non inserire associazioni con tag id inesistenti,
+        let tagList = [];
+        const tagsToFind = articleToUpload[article].tags;
+        for (tag in tagsToFind) {
+          const tagObject = await app.service('tags').find({
+            query: {
+              id: tagsToFind[tag].id
+            }
+          });
+          tagList.push(tagObject);
+        }
+        console.log("tag trovati: " + JSON.stringify(tagList));
+        // Crea un nuovo record nella tabella 'images'
+        const insertArticle = await app.service('articles').create({
+          title: articleToUpload[article].title,
+          subtitle: articleToUpload[article].subtitle,
+          art_body: articleToUpload[article].art_body
+        });
+        //console.log("oggetto immagine restituito: " + JSON.stringify(insertImg))
+        //associa l' immagine ai tags in relazione m:n
+
+        for (tag in tagList) {
+          const tagsId = tagList[tag].data[0].id;
+          //const tagsId = tagList[tag].data[0];
+          //await insertImg.addTags(tagsId);
+          console.log("Inserimento associazione: imageId " + insertArticle.id + " // tagId: " + tagsId);
+          const createAssociation = await app.get('sequelizeClient').models.articlestags.create({
+            articleId: insertArticle.id,
+            tagId: tagsId
+          });
+        }
+      }
+      // Invia una risposta di successo
+      res.status(200).json({ message: 'Articoli inseriti con successo!' });
+    } catch (error) {
+      console.error("Errore:", error);
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
+    }
+  });
+
+
 
 
   /***************/
