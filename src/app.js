@@ -21,7 +21,8 @@ const authentication = require('./authentication');
 const { connectAndSync, sequelize } = require('./sequelize');
 
 const errorFilePath = path.join(__dirname, './error-page.html');
-const tagsFormatter = require("./utils/tags-json-formatter-for-api")
+const tagsFormatter = require("./utils/tags-json-formatter-for-api");
+const randomIdGenerator = require("./utils/random-id-generator");
 
 module.exports.createApp = function createApp() {
   const app = express(feathers());
@@ -42,6 +43,7 @@ module.exports.createApp = function createApp() {
     try {
       const imgTaggate = await app.service('images').find({
         query: {
+          isGallery: true,
           $skip: 0
         }
       });
@@ -66,15 +68,56 @@ module.exports.createApp = function createApp() {
       });
     }
   });
-
+  /*
+    app.get('/api/articles', async (req, res) => {
+      try {
+        const articles = await app.service('articles').find({
+          query: {
+            $skip: 0
+          }
+        });
+        const jsonOutput = tagsFormatter(articles);
+        res.status(200).json(jsonOutput);
+      } catch (error) {
+        res.status(500).json({
+          error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+            " / message: " + error.message
+        });
+      }
+    });
+  */
   app.get('/api/articles', async (req, res) => {
     try {
+      // Recupera gli articoli
       const articles = await app.service('articles').find({
         query: {
           $skip: 0
         }
       });
+
+      // Recupera le immagini utilizzando image_id dagli articoli
+      const imageIds = articles.data
+        .filter(article => article.image_id !== null)
+        .map(article => article.image_id);
+      const images = await app.service('images').find({
+        query: {
+          article_id: {
+            $in: imageIds
+          }
+        }
+      });
+
+      // Formatta i dati degli articoli e aggiungi le immagini corrispondenti
       const jsonOutput = tagsFormatter(articles);
+      /*
+      jsonOutput.forEach(article => {
+        article.images = images.data.filter(image => image.id === article.image_id);
+      });
+      */
+      jsonOutput.forEach(article => {
+        article.images = images.data.filter(image => image.article_id === article.image_id);
+      });
+
       res.status(200).json(jsonOutput);
     } catch (error) {
       res.status(500).json({
@@ -85,12 +128,11 @@ module.exports.createApp = function createApp() {
   });
 
 
+
   app.post('/api/imgupload', async (req, res) => {
     try {
       // Trova il record del tag con ID 1
-      console.log("json in ingresso: " + JSON.stringify(req.body));
       const imgToUpload = req.body.images;
-      console.log("imgToUpload: " + JSON.stringify(imgToUpload));
 
       for (image in imgToUpload) {
         //recupera gli oggetti 'tags'. In teoria ho già gli id, ma assicura di non inserire associazioni con tag id inesistenti,
@@ -104,21 +146,18 @@ module.exports.createApp = function createApp() {
           });
           tagList.push(tagObject);
         }
-        console.log("tag trovati: " + JSON.stringify(tagList));
         // Crea un nuovo record nella tabella 'images'
         const insertImg = await app.service('images').create({
           image_name: imgToUpload[image].image_name,
           image_url: imgToUpload[image].image_url,
           image_thumb: imgToUpload[image].image_thumb
         });
-        //console.log("oggetto immagine restituito: " + JSON.stringify(insertImg))
         //associa l' immagine ai tags in relazione m:n
 
         for (tag in tagList) {
           const tagsId = tagList[tag].data[0].id;
           //const tagsId = tagList[tag].data[0];
           //await insertImg.addTags(tagsId);
-          console.log("Inserimento associazione: imageId " + insertImg.id + " // tagId: " + tagsId);
           const createAssociation = await app.get('sequelizeClient').models.imagestags.create({
             imageId: insertImg.id,
             tagId: tagsId
@@ -139,10 +178,8 @@ module.exports.createApp = function createApp() {
   app.post('/api/addtag', async (req, res) => {
     try {
       const tagToAdd = req.body.tags;
-      console.log("tag in ingresso: " + JSON.stringify(tagToAdd))
       if (tagToAdd !== undefined) {
         for (i in tagToAdd) {
-          console.log("Inserimento del tag: " + tagToAdd[i].description);
           const addTag = await app.service('tags').create({
             description: tagToAdd[i].description
           });
@@ -164,13 +201,12 @@ module.exports.createApp = function createApp() {
   app.post('/api/articleupload', async (req, res) => {
     try {
       // Trova il record del tag con ID 1
-      console.log("json in ingresso: " + JSON.stringify(req.body));
       const articleToUpload = req.body.articles;
-      console.log("articleToUpload: " + JSON.stringify(articleToUpload));
 
       for (article in articleToUpload) {
         //recupera gli oggetti 'tags'. In teoria ho già gli id, ma assicura di non inserire associazioni con tag id inesistenti,
         let tagList = [];
+        let articleProg;
         const tagsToFind = articleToUpload[article].tags;
         for (tag in tagsToFind) {
           const tagObject = await app.service('tags').find({
@@ -180,23 +216,54 @@ module.exports.createApp = function createApp() {
           });
           tagList.push(tagObject);
         }
-        console.log("tag trovati: " + JSON.stringify(tagList));
         // Crea un nuovo record nella tabella 'images'
-        const insertArticle = await app.service('articles').create({
-          title: articleToUpload[article].title,
-          subtitle: articleToUpload[article].subtitle,
-          art_body: articleToUpload[article].art_body
-        });
-        //console.log("oggetto immagine restituito: " + JSON.stringify(insertImg))
+        //controlla se related_images è valorizzato. Se lo è, crea un id random e lo setta in tabella. Poi deve inserire in images i dati delle immagini insieme all' id
+        if (articleToUpload[article].related_images != undefined && articleToUpload[article].related_images.length > 0) {
+          while (true) {
+            const articleId = randomIdGenerator();
+            const checkArticle = await app.service('articles').find({
+              query: {
+                $skip: 0,
+                image_id: articleId
+              }
+            });
+            if (checkArticle.data == undefined || checkArticle.data == null || checkArticle.data.length == 0) {
+              const insertArticle = await app.service('articles').create({
+                title: articleToUpload[article].title,
+                subtitle: articleToUpload[article].subtitle,
+                art_body: articleToUpload[article].art_body,
+                image_id: articleId
+              });
+              articleProg = insertArticle.id;
+
+              for (imgToUpload in articleToUpload[article].related_images) {
+                const insertImage = await app.service('images').create({
+                  image_name: articleToUpload[article].related_images[imgToUpload].image_name,
+                  image_url: articleToUpload[article].related_images[imgToUpload].image_url,
+                  image_thumb: articleToUpload[article].related_images[imgToUpload].image_thumb,
+                  article_id: articleId
+                });
+              }
+              break;
+            }
+          }
+        }
+        else {
+          const insertArticle = await app.service('articles').create({
+            title: articleToUpload[article].title,
+            subtitle: articleToUpload[article].subtitle,
+            art_body: articleToUpload[article].art_body
+          });
+          articleProg = insertArticle.id;
+        }
         //associa l' immagine ai tags in relazione m:n
 
         for (tag in tagList) {
           const tagsId = tagList[tag].data[0].id;
           //const tagsId = tagList[tag].data[0];
           //await insertImg.addTags(tagsId);
-          console.log("Inserimento associazione: imageId " + insertArticle.id + " // tagId: " + tagsId);
           const createAssociation = await app.get('sequelizeClient').models.articlestags.create({
-            articleId: insertArticle.id,
+            articleId: articleProg,
             tagId: tagsId
           });
         }
