@@ -22,7 +22,12 @@ module.exports = function (app) {
     art_body: {
       type: DataTypes.TEXT,
       allowNull: false
-    }
+    },
+    image_id: {
+      type: DataTypes.BIGINT,
+      allowNull: true,
+      unique: true
+    },
   }, {
     hooks: {
       beforeCount(options) {
