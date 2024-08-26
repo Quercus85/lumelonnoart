@@ -20,10 +20,10 @@ const includeTagsHook = async context => {
         attributes: []
       }
     }],
-    limit: 25, // Imposta il limite di risultati a 25
+    limit: context.params.query.$limit || 25, // Imposta il limite di risultati a 25
     offset: context.params.query.$skip || 0
   };
-
+console.log("KHAAAAAN" + JSON.stringify(context.params))
   return context;
 };
 

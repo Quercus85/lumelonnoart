@@ -18,8 +18,9 @@ async function getImages() {
 }
 
 export default function About() {
+    
     const [response, setResponse] = useState(null);
-
+    /*
     // Prende i dati dopo il caricamento della pagina
     useEffect(() => {
         const fetchData = async () => {
@@ -29,6 +30,7 @@ export default function About() {
 
         fetchData();
     }, []); // Aggiungi eventuali dipendenze qui
+    */
 
     return (
         <>
