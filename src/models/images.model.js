@@ -19,6 +19,18 @@ module.exports = function (app) {
       type: DataTypes.TEXT,
       allowNull: false
     },
+    image_thumb: {
+      type: DataTypes.TEXT,
+      allowNull: false
+    },
+    article_id: {
+      type: DataTypes.BIGINT,
+      allowNull: true
+    },
+    isGallery: {
+      type:DataTypes.BOOLEAN,
+      defaultValue: false
+    }
   }, {
     hooks: {
       beforeCount(options) {

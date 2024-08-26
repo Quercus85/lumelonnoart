@@ -122,3 +122,10 @@ root.render(
   app.get('/*', function (req, res) {
      res.sendFile(path.join(app.get('public'), 'index.html'));
    });
+
+   ------------------------------------------------------------------------------------
+   ***generare nuovi service feathers.js (serve libreria apposita)***
+
+   npx feathers g service
+
+   ---------------------------------------------------------------------------------

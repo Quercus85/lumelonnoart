@@ -21,6 +21,8 @@ const authentication = require('./authentication');
 const { connectAndSync, sequelize } = require('./sequelize');
 
 const errorFilePath = path.join(__dirname, './error-page.html');
+const tagsFormatter = require("./utils/tags-json-formatter-for-api");
+const randomIdGenerator = require("./utils/random-id-generator");
 
 module.exports.createApp = function createApp() {
   const app = express(feathers());
@@ -36,13 +38,22 @@ module.exports.createApp = function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  //api endpoint services, mostly for easier CRUD operations. NOT FOR PRODUCTION !
+  //api endpoint services. NOT FOR PRODUCTION !
   app.get('/api/images', async (req, res) => {
     try {
-      const images = await app.service('images').find();
-      res.json(images);
+      const imgTaggate = await app.service('images').find({
+        query: {
+          isGallery: true,
+          $skip: 0
+        }
+      });
+      const jsonOutput = tagsFormatter(imgTaggate);
+      res.status(200).json(jsonOutput);
     } catch (error) {
-      res.status(500).json({ error: 'Errore nel recupero delle immagini.: ' + error });
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
     }
   });
 
@@ -51,80 +62,207 @@ module.exports.createApp = function createApp() {
       const tags = await app.service('tags').find();
       res.json(tags);
     } catch (error) {
-      res.status(500).json({ error: 'Errore nel recupero delle tags.: ' + error });
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
+    }
+  });
+
+  app.get('/api/articles', async (req, res) => {
+    try {
+      // Recupera gli articoli
+      const articles = await app.service('articles').find({
+        query: {
+          $skip: 0
+        }
+      });
+
+      // Recupera le immagini utilizzando image_id dagli articoli
+      const imageIds = articles.data
+        .filter(article => article.image_id !== null)
+        .map(article => article.image_id);
+      const images = await app.service('images').find({
+        query: {
+          article_id: {
+            $in: imageIds
+          }
+        }
+      });
+
+      // Formatta i dati degli articoli e aggiungi le immagini corrispondenti
+      const jsonOutput = tagsFormatter(articles);
+      /*
+      jsonOutput.forEach(article => {
+        article.images = images.data.filter(image => image.id === article.image_id);
+      });
+      */
+      jsonOutput.forEach(article => {
+        article.images = images.data.filter(image => image.article_id === article.image_id);
+      });
+
+      res.status(200).json(jsonOutput);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
     }
   });
 
 
+
   app.post('/api/imgupload', async (req, res) => {
     try {
-      //TODO: trova il tag usando l' id in ingresso. Aggiungi più di un tag
       // Trova il record del tag con ID 1
-      const tagRecord = await app.service('tags').find({
-        query: {
-          id: 1
-        }
-      });
-      console.log("tag trovati: " + JSON.stringify(tagRecord))
-      // Crea un nuovo record nella tabella 'images' e associalo al tag trovato
-      const insertImg = await app.service('images').create({
-        image_name: 'pippolomeo',
-        image_url: 'http://iopippo'
-      });
-      console.log("oggetto immagine restituito: " + JSON.stringify(insertImg))
-      console.log("id del tag: " + tagRecord.data[0].id)
-      //inserimento del tag ? 
-      const pippores = await app.get('sequelizeClient').models.imagestags.create({
-        imageId: insertImg.id,
-        tagId: tagRecord.data[0].id
-      });
+      const imgToUpload = req.body.images;
 
-      console.log("Cerco di prendere l' immagine con le tag associate");
-      const imgTaggate = await app.service('images').find({
-        query: {
-          $limit:25
-        },
-        sequelize: {
-          include: [{
-            model: app.get('sequelizeClient').models.tags,
-            as: 'tags',
-            through: {
-              model: app.get('sequelizeClient').models.imagestags,
-              attributes: []
+      for (image in imgToUpload) {
+        //recupera gli oggetti 'tags'. In teoria ho già gli id, ma assicura di non inserire associazioni con tag id inesistenti,
+        let tagList = [];
+        const tagsToFind = imgToUpload[image].tags;
+        for (tag in tagsToFind) {
+          const tagObject = await app.service('tags').find({
+            query: {
+              id: tagsToFind[tag].id
             }
-          }]
+          });
+          tagList.push(tagObject);
         }
-      });
-      
-      
+        // Crea un nuovo record nella tabella 'images'
+        const insertImg = await app.service('images').create({
+          image_name: imgToUpload[image].image_name,
+          image_url: imgToUpload[image].image_url,
+          image_thumb: imgToUpload[image].image_thumb
+        });
+        //associa l' immagine ai tags in relazione m:n
 
-      console.log("immagini trovate: " + JSON.stringify(imgTaggate))
+        for (tag in tagList) {
+          const tagsId = tagList[tag].data[0].id;
+          //const tagsId = tagList[tag].data[0];
+          //await insertImg.addTags(tagsId);
+          const createAssociation = await app.get('sequelizeClient').models.imagestags.create({
+            imageId: insertImg.id,
+            tagId: tagsId
+          });
+        }
+      }
       // Invia una risposta di successo
-      res.status(200).json({ message: 'Immagine inserita con successo!', data: imgTaggate });
+      res.status(200).json({ message: 'Immagini inserite con successo!' });
     } catch (error) {
       console.error("Errore:", error);
-      res.status(500).json({ error: 'Errore durante l\'elaborazione della richiesta.' });
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
     }
   });
 
   app.post('/api/addtag', async (req, res) => {
     try {
-      const tagToAdd = req.body.description;
-      console.log("tag in ingresso: " + tagToAdd)
+      const tagToAdd = req.body.tags;
       if (tagToAdd !== undefined) {
-        const addTag = await app.service('tags').create({
-          description: tagToAdd
-        });
-        res.status(200).json({ message: 'Tag inserita con successo!', data: addTag });
+        for (i in tagToAdd) {
+          const addTag = await app.service('tags').create({
+            description: tagToAdd[i].description
+          });
+        }
+        res.status(200).json({ message: 'Tag inserite con successo!' });
       }
       else
         res.status(500).json({ error: 'La descrizione del tag non può essere vuota' });
     }
     catch (error) {
       console.error("Errore:", error);
-      res.status(500).json({ error: 'Errore durante l\'elaborazione della richiesta.' });
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
     }
-  })
+  });
+
+  app.post('/api/articleupload', async (req, res) => {
+    try {
+      // Trova il record del tag con ID 1
+      const articleToUpload = req.body.articles;
+
+      for (article in articleToUpload) {
+        //recupera gli oggetti 'tags'. In teoria ho già gli id, ma assicura di non inserire associazioni con tag id inesistenti,
+        let tagList = [];
+        let articleProg;
+        const tagsToFind = articleToUpload[article].tags;
+        for (tag in tagsToFind) {
+          const tagObject = await app.service('tags').find({
+            query: {
+              id: tagsToFind[tag].id
+            }
+          });
+          tagList.push(tagObject);
+        }
+        // Crea un nuovo record nella tabella 'images'
+        //controlla se related_images è valorizzato. Se lo è, crea un id random e lo setta in tabella. Poi deve inserire in images i dati delle immagini insieme all' id
+        if (articleToUpload[article].related_images != undefined && articleToUpload[article].related_images.length > 0) {
+          while (true) {
+            const articleId = randomIdGenerator();
+            const checkArticle = await app.service('articles').find({
+              query: {
+                $skip: 0,
+                image_id: articleId
+              }
+            });
+            if (checkArticle.data == undefined || checkArticle.data == null || checkArticle.data.length == 0) {
+              const insertArticle = await app.service('articles').create({
+                title: articleToUpload[article].title,
+                subtitle: articleToUpload[article].subtitle,
+                art_body: articleToUpload[article].art_body,
+                image_id: articleId
+              });
+              articleProg = insertArticle.id;
+
+              for (imgToUpload in articleToUpload[article].related_images) {
+                const insertImage = await app.service('images').create({
+                  image_name: articleToUpload[article].related_images[imgToUpload].image_name,
+                  image_url: articleToUpload[article].related_images[imgToUpload].image_url,
+                  image_thumb: articleToUpload[article].related_images[imgToUpload].image_thumb,
+                  article_id: articleId
+                });
+              }
+              break;
+            }
+          }
+        }
+        else {
+          const insertArticle = await app.service('articles').create({
+            title: articleToUpload[article].title,
+            subtitle: articleToUpload[article].subtitle,
+            art_body: articleToUpload[article].art_body
+          });
+          articleProg = insertArticle.id;
+        }
+        //associa l' immagine ai tags in relazione m:n
+
+        for (tag in tagList) {
+          const tagsId = tagList[tag].data[0].id;
+          //const tagsId = tagList[tag].data[0];
+          //await insertImg.addTags(tagsId);
+          const createAssociation = await app.get('sequelizeClient').models.articlestags.create({
+            articleId: articleProg,
+            tagId: tagsId
+          });
+        }
+      }
+      // Invia una risposta di successo
+      res.status(200).json({ message: 'Articoli inseriti con successo!' });
+    } catch (error) {
+      console.error("Errore:", error);
+      res.status(500).json({
+        error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
+          " / message: " + error.message
+      });
+    }
+  });
+
+
 
 
   /***************/

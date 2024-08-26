@@ -46,8 +46,9 @@ module.exports.connectAndSync = async function connectAndSync(app) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   const opts = { force: true };
+  const alter = {alter : true };
   //await sequelize.sync(opts);
-  const synched = await sequelize.sync();
+  const synched = await sequelize.sync(alter);
   if(synched) console.log('All models were synchronized successfully.');
     else console.log('Something occurred when synching models')
 };

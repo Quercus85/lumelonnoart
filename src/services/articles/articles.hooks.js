@@ -1,12 +1,10 @@
-//const { authenticate } = require('@feathersjs/authentication').hooks;
-
 const includeTagsHook = async context => {
   const app = context.app; // Accedi all'oggetto app dal contesto
   const sequelizeClient = app.get('sequelizeClient');
-  const { tags, imagestags } = sequelizeClient.models;
+  const { tags, articlestags } = sequelizeClient.models;
 
   // Verifica che i modelli siano definiti
-  if (!tags || !imagestags) {
+  if (!tags || !articlestags) {
     throw new Error('Modelli tags o imagestags non trovati');
   }
 
@@ -18,7 +16,7 @@ const includeTagsHook = async context => {
       as: 'tags',
       attributes:['description'],
       through: {
-        model: imagestags,
+        model: articlestags,
         attributes: []
       }
     }],
@@ -32,8 +30,7 @@ const includeTagsHook = async context => {
 module.exports = {
   before: {
     all: [],
-    find: [includeTagsHook
-    ],
+    find: [includeTagsHook],
     get: [],
     create: [],
     update: [],

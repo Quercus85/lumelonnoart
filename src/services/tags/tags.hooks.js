@@ -1,5 +1,3 @@
-const findAllTags = require('../../hooks/find-all-tags');
-
 module.exports = {
   before: {
     all: [],
@@ -13,7 +11,6 @@ module.exports = {
 
   after: {
     all: [],
-    //find: [findAllTags()],
     find: [],
     get: [],
     create: [],
