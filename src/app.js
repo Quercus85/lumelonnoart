@@ -38,7 +38,7 @@ module.exports.createApp = function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  //api endpoint services, mostly for easier CRUD operations. NOT FOR PRODUCTION !
+  //api endpoint services. NOT FOR PRODUCTION !
   app.get('/api/images', async (req, res) => {
     try {
       const imgTaggate = await app.service('images').find({
@@ -68,24 +68,7 @@ module.exports.createApp = function createApp() {
       });
     }
   });
-  /*
-    app.get('/api/articles', async (req, res) => {
-      try {
-        const articles = await app.service('articles').find({
-          query: {
-            $skip: 0
-          }
-        });
-        const jsonOutput = tagsFormatter(articles);
-        res.status(200).json(jsonOutput);
-      } catch (error) {
-        res.status(500).json({
-          error: 'Errore durante l\'elaborazione della richiesta. Code: ' + error.code + " / name: " + error.name +
-            " / message: " + error.message
-        });
-      }
-    });
-  */
+
   app.get('/api/articles', async (req, res) => {
     try {
       // Recupera gli articoli
