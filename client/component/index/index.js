@@ -44,7 +44,6 @@ export function Index() {
     useEffect(() => {
         const fetchData = async () => {
             const result = await getBlogArticles();
-            console.log("risultato: " + JSON.stringify(result))
             setArticles(result);
         };
 

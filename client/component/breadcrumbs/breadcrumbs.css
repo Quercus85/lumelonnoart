@@ -1,0 +1,16 @@
+.breadcrumb {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 5%;
+}
+
+.tag-intestation{
+    margin-bottom: 7%;
+}
+
+.breadcrumb-tag {
+  background-color: rgb(94, 190, 196, 0.5);
+  padding: 7%;
+  margin: 5%;
+  border-radius: 25px;
+}
